@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
 
     //send data
 
-    while (flying) {
+    //while (flying) {
         string line;
         while (getline(telemetry_file, line)) {
             cout << "line\n";
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
                 std::cout << "Sent " << bytesSent << " bytes\n";
             }
         }
-    }
+    //}
 
 
     closesocket(sock);
