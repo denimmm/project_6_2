@@ -18,5 +18,16 @@
     <ClCompile Include="Project_6_2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TelemetryModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TelemetryModule.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Packets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
