@@ -128,6 +128,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Project_6_2.cpp" />
+    <ClCompile Include="TelemetryModule.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Packets.h" />
+    <ClInclude Include="TelemetryModule.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
