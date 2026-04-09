@@ -6,12 +6,13 @@
 #include <sstream>
 #include <ctime>
 #include <iomanip>
+#include"ClientNetwork.h"
 
 class TelemetryModule
 {
 	public:
 		TelemetryModule();
-		void Run();
+		void Run(ClientNetwork& client);
 		
 	private:
 		std::vector<std::string> _telemetryFiles;
@@ -19,6 +20,6 @@ class TelemetryModule
 		void _init();
 		void _getFiles();
 		void _loadRandomFile();
-		void _readFile();
+		void _readFile(ClientNetwork& client);
 		int _getUnixTime(std::string timestamp);
 };
