@@ -47,6 +47,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    cout << "starting telemetry\n";
+
     telem.Run(); // Run the telemetry manager
 
 

@@ -50,7 +50,7 @@ void handleClient(SOCKET clientSock) {
     int _packets_received = 0;
 
     while ((bytes = recv(clientSock, buffer, sizeof(buffer), 0)) > 0) {
-
+        cout << "Bytes received: " << bytes << endl;
         
 
         switch (bytes) {
@@ -60,7 +60,7 @@ void handleClient(SOCKET clientSock) {
             
             memcpy(&_aircraftID, buffer, AIRCRAFT_ID_SIZE);
             for (int i = 0; i < 5; i++) {
-
+                cout << "Aircraft (" << _aircraftID << ") connected.\n";
                 if (file) {
                     file.close();
                 }
@@ -80,6 +80,7 @@ void handleClient(SOCKET clientSock) {
             if (!file) {
                 closesocket(clientSock);
                 file.close();
+                cout << "Failed to open file for aircraft (" << _aircraftID << ")\n";
                 return;
             }
 
@@ -94,6 +95,8 @@ void handleClient(SOCKET clientSock) {
             memcpy(&timestamp, buffer, TIMESTAMP_SIZE);
             memcpy(&fuel_amount, buffer + TIMESTAMP_SIZE, FUEL_SIZE);
 
+            cout << "Aircraft (" << _aircraftID << ") Fuel: " << fuel_amount;
+            cout << "Aircraft (" << _aircraftID << ") timestamp: " << timestamp << "\n";
 
 
             //calculate current fuel consumption
