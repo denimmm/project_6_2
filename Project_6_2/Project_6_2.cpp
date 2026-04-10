@@ -19,50 +19,50 @@ const int NUMBER_OF_ARGS = 4;
 
 int main(int argc, char* argv[]) {
 
-    //check arg count
-    if(argc < NUMBER_OF_ARGS){
-        cout << "please enter <IP_Address> <Port> <Aircraft_ID> as commandline arguments \n";
-        return 0;
-    }
+	//check arg count
+	if (argc < NUMBER_OF_ARGS) {
+		cout << "please enter <IP_Address> <Port> <Aircraft_ID> as commandline arguments \n";
+		return 0;
+	}
 
-    //get args
-    string Server_IP = argv[1];
-    string Port = argv[2];
-    string Aircraft_ID = argv[2];
+	//get args
+	string Server_IP = argv[1];
+	string Port = argv[2];
+	string Aircraft_ID = argv[2];
 
-    ClientNetwork client;
+	ClientNetwork client;
 
-    //try to connect to server
-    if (!client.Connect(Server_IP, stoi(Port))) {
-        cout << "Connection failed\n";
-        return 1;
-    }
-    //Aircraft ID 
-    IDPacket idPacket;
-    idPacket.aircraftID = stoi(Aircraft_ID);
+	//try to connect to server
+	if (!client.Connect(Server_IP, stoi(Port))) {
+		cout << "Connection failed\n";
+		return 1;
+	}
+	//Aircraft ID 
+	IDPacket idPacket;
+	idPacket.aircraftID = stoi(Aircraft_ID);
 
-    //Send ID packet
-    if (!client.SendIDPacket(idPacket)) {
-        std::cout << "Failed to send ID packet\n";
-        client.Close();
-        return 1;
-    }
-    
-    TelemetryModule telem; // Constructor initializes
+	//Send ID packet
+	if (!client.SendIDPacket(idPacket)) {
+		std::cout << "Failed to send ID packet\n";
+		client.Close();
+		return 1;
+	}
 
-    //try to connect 5 times
+	TelemetryModule telem; // Constructor initializes
 
-    //if (connect(sock, (sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
-    //    std::cout << "Connection failed\n";
-    //    return 1;
-    //}
+	//try to connect 5 times
 
-    cout << "starting telemetry\n";
-  
-    telem.Run(client); // Run the telemetry manager
+	//if (connect(sock, (sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
+	//    std::cout << "Connection failed\n";
+	//    return 1;
+	//}
+
+	cout << "starting telemetry\n";
+
+	telem.Run(client); // Run the telemetry manager
 
 
-    client.Close();
+	client.Close();
 
-    cout << "Transmission completed.\n";
+	cout << "Transmission completed.\n";
 }

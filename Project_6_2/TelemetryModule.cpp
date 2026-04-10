@@ -71,10 +71,6 @@ void TelemetryModule::_readFile(ClientNetwork& client)
 		std::string timestamp, current_fuel;
 		getline(ss, timestamp, ',');
 		getline(ss, current_fuel, ',');
-		DataPacket* packet = new DataPacket;
-		packet->unixTimestamp = _getUnixTime(timestamp);
-		packet->fuelRemaining = atof(current_fuel.c_str());
-
 		// Create telemetry packet 
 		DataPacket packet;
 
