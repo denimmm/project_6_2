@@ -9,14 +9,14 @@
 class ClientNetwork
 {
 public:
-    ClientNetwork();
-    ~ClientNetwork();
+	ClientNetwork();
+	~ClientNetwork();
 
-    bool Connect(const std::string& serverIP, int port);
-    bool SendIDPacket(const IDPacket& packet);
-    bool SendDataPacket(const DataPacket& packet);
-    void Close();
+	bool Connect(const std::string& serverIP, int port);
+	bool SendIDPacket(const IDPacket& packet);
+	bool SendDataPacket(const DataPacket packet);
+	void Close();
 
 private:
-    SOCKET _socket;
+	SOCKET _socket;
 };

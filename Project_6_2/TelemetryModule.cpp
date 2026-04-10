@@ -1,6 +1,5 @@
 #include "TelemetryModule.h"
 #include "Packets.h"
-
 #include <filesystem>
 #include <chrono>
 #include <thread>
@@ -93,7 +92,6 @@ void TelemetryModule::_readFile(ClientNetwork& client)
 		if (!client.SendDataPacket(packet))
 		{
 			std::cout << "Failed to send data packet\n";
-			break;
 		}
 
 		std::this_thread::sleep_for(std::chrono::seconds(1));

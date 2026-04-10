@@ -28,7 +28,6 @@ int main(int argc, char* argv[]) {
 	//get args
 	string Server_IP = argv[1];
 	string Port = argv[2];
-	string Aircraft_ID = argv[2];
 
 	ClientNetwork client;
 
@@ -37,9 +36,12 @@ int main(int argc, char* argv[]) {
 		cout << "Connection failed\n";
 		return 1;
 	}
+
+	srand(time(NULL));
+
 	//Aircraft ID 
 	IDPacket idPacket;
-	idPacket.aircraftID = stoi(Aircraft_ID);
+	idPacket.aircraftID = 1000000 + rand() % 900000;
 
 	//Send ID packet
 	if (!client.SendIDPacket(idPacket)) {

@@ -62,7 +62,7 @@ bool ClientNetwork::SendIDPacket(const IDPacket& packet)
 	return result == sizeof(IDPacket);
 }
 
-bool ClientNetwork::SendDataPacket(const DataPacket& packet)
+bool ClientNetwork::SendDataPacket(const DataPacket packet)
 {
 	//Telemetry data packet sending
 	int result = send(_socket, reinterpret_cast<const char*>(&packet), sizeof(DataPacket), 0);
