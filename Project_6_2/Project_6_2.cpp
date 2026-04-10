@@ -8,6 +8,7 @@
 #include <sstream>
 #include <ws2tcpip.h>
 #include "TelemetryModule.h"
+#include "ClientNetwork.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -29,31 +30,39 @@ int main(int argc, char* argv[]) {
     string Port = argv[2];
     string Aircraft_ID = argv[2];
 
-    WSADATA wsa;
-    WSAStartup(MAKEWORD(2, 2), &wsa);
-    SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
+    ClientNetwork client;
 
-    sockaddr_in server{};
-    server.sin_family = AF_INET;
-    server.sin_port = htons(stoi(Port));
-    inet_pton(AF_INET, Server_IP.c_str(), &server.sin_addr);
+    //try to connect to server
+    if (!client.Connect(Server_IP, stoi(Port))) {
+        cout << "Connection failed\n";
+        return 1;
+    }
+    //Aircraft ID 
+    IDPacket idPacket;
+    idPacket.aircraftID = stoi(Aircraft_ID);
+
+    //Send ID packet
+    if (!client.SendIDPacket(idPacket)) {
+        std::cout << "Failed to send ID packet\n";
+        client.Close();
+        return 1;
+    }
     
     TelemetryModule telem; // Constructor initializes
 
     //try to connect 5 times
 
-    if (connect(sock, (sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
-        std::cout << "Connection failed\n";
-        return 1;
-    }
+    //if (connect(sock, (sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
+    //    std::cout << "Connection failed\n";
+    //    return 1;
+    //}
 
     cout << "starting telemetry\n";
+  
+    telem.Run(client); // Run the telemetry manager
 
-    telem.Run(); // Run the telemetry manager
 
-
-    closesocket(sock);
-    WSACleanup();
+    client.Close();
 
     cout << "Transmission completed.\n";
 }

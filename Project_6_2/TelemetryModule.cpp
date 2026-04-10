@@ -1,6 +1,8 @@
 #include "TelemetryModule.h"
 #include <dirent.h>
 #include "Packets.h"
+#include<chrono>
+#include <thread>
 
 
 TelemetryModule::TelemetryModule()
@@ -8,9 +10,9 @@ TelemetryModule::TelemetryModule()
 	_init();
 }
 
-void TelemetryModule::Run()
+void TelemetryModule::Run(ClientNetwork& client)
 {
-	_readFile(); // Opens and reads the randomly choosen file.
+	_readFile(client); // Opens and reads the randomly choosen file.
 }
 
 void TelemetryModule::_init()
@@ -50,7 +52,7 @@ void TelemetryModule::_loadRandomFile()
 	_file.open(_telemetryFiles[index]);
 }
 
-void TelemetryModule::_readFile()
+void TelemetryModule::_readFile(ClientNetwork& client)
 {
 	if (!_file.is_open()) {
 		std::cout << "Failed to open file :C\n";
@@ -72,10 +74,20 @@ void TelemetryModule::_readFile()
 		DataPacket* packet = new DataPacket;
 		packet->unixTimestamp = _getUnixTime(timestamp);
 		packet->fuelRemaining = atof(current_fuel.c_str());
-		
-		//send packet
-		// Needs the network module
 
+		// Create telemetry packet 
+		DataPacket packet;
+
+		packet.unixTimestamp = _getUnixTime(timestamp);
+		packet.fuelRemaining = atof(current_fuel.c_str());
+
+		//Send telemetry packet to server
+		if (!client.SendDataPacket(packet))
+		{
+			std::cout << "Failed to send data packet\n";
+			break;
+		}
+		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
 	_file.close();
