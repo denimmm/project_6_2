@@ -127,10 +127,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ClientNetwork.cpp" />
     <ClCompile Include="Project_6_2.cpp" />
     <ClCompile Include="TelemetryModule.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ClientNetwork.h" />
     <ClInclude Include="Packets.h" />
     <ClInclude Include="TelemetryModule.h" />
   </ItemGroup>

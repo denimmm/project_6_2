@@ -21,12 +21,18 @@
     <ClCompile Include="TelemetryModule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ClientNetwork.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TelemetryModule.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Packets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientNetwork.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
