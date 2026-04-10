@@ -1,9 +1,14 @@
 #include "TelemetryModule.h"
-#include <dirent.h>
 #include "Packets.h"
-#include<chrono>
-#include <thread>
 
+#include <filesystem>
+#include <chrono>
+#include <thread>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
+
+namespace fs = std::filesystem;
 
 TelemetryModule::TelemetryModule()
 {
@@ -12,55 +17,61 @@ TelemetryModule::TelemetryModule()
 
 void TelemetryModule::Run(ClientNetwork& client)
 {
-	_readFile(client); // Opens and reads the randomly choosen file.
+	_readFile(client); // Opens and reads the randomly chosen file.
 }
 
 void TelemetryModule::_init()
 {
-	_getFiles(); // Gets the txt file in the running directory.
-	_loadRandomFile(); // Loads a random file from the _telemetryFiles vector.
+	_getFiles();          // Gets the txt files in the running directory.
+	_loadRandomFile();    // Loads a random file from the _telemetryFiles vector.
 }
 
 void TelemetryModule::_getFiles()
 {
-	DIR* directory;
-	struct dirent* en;
-
-	directory = opendir(".");
-	if (directory)
+	for (const auto& entry : fs::directory_iterator("."))
 	{
-		while ((en = readdir(directory)) != NULL)
+		if (entry.is_regular_file() && entry.path().extension() == ".txt")
 		{
-			std::string name = std::string(en->d_name);
-			if (name.find(".txt") != std::string::npos)
-			{
-				_telemetryFiles.push_back(name);
-			}
+			_telemetryFiles.push_back(entry.path().filename().string());
 		}
-		closedir(directory);
 	}
-	else
+
+	if (_telemetryFiles.empty())
 	{
-		std::cout << "Could not open directory\n";
+		std::cout << "No .txt files found in directory\n";
 	}
 }
 
 void TelemetryModule::_loadRandomFile()
 {
-	srand(time(0)); // Use the current time as the seed for random
+	if (_telemetryFiles.empty())
+	{
+		std::cout << "No telemetry files available\n";
+		return;
+	}
+
+	srand(time(0)); // Seed random
 	int index = rand() % _telemetryFiles.size();
+
 	_file.open(_telemetryFiles[index]);
+
+	if (!_file.is_open())
+	{
+		std::cout << "Failed to open file: " << _telemetryFiles[index] << "\n";
+	}
 }
 
 void TelemetryModule::_readFile(ClientNetwork& client)
 {
-	if (!_file.is_open()) {
+	if (!_file.is_open())
+	{
 		std::cout << "Failed to open file :C\n";
+		return;
 	}
 
 	std::string line;
-	while (getline(_file, line)) {
-
+	while (getline(_file, line))
+	{
 		if (_file.eof())
 		{
 			break;
@@ -69,25 +80,26 @@ void TelemetryModule::_readFile(ClientNetwork& client)
 		// Parse Data
 		std::stringstream ss(line);
 		std::string timestamp, current_fuel;
+
 		getline(ss, timestamp, ',');
 		getline(ss, current_fuel, ',');
+
 		// Create telemetry packet 
 		DataPacket packet;
-
 		packet.unixTimestamp = _getUnixTime(timestamp);
 		packet.fuelRemaining = atof(current_fuel.c_str());
 
-		//Send telemetry packet to server
+		// Send telemetry packet to server
 		if (!client.SendDataPacket(packet))
 		{
 			std::cout << "Failed to send data packet\n";
 			break;
 		}
+
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
 	_file.close();
-
 }
 
 int TelemetryModule::_getUnixTime(std::string timestamp)
@@ -97,7 +109,8 @@ int TelemetryModule::_getUnixTime(std::string timestamp)
 
 	ss >> std::get_time(&time, "%d_%m_%Y %H:%M:%S");
 
-	if (ss.fail()) {
+	if (ss.fail())
+	{
 		std::cerr << "Error: Failed to parse the time string." << std::endl;
 		return -1;
 	}
