@@ -1,6 +1,8 @@
 #include "TelemetryModule.h"
 #include "dirent.h"
 #include "Packets.h"
+#include<chrono>
+#include <thread>
 
 
 TelemetryModule::TelemetryModule()
@@ -72,19 +74,20 @@ void TelemetryModule::_readFile(ClientNetwork& client)
 		DataPacket* packet = new DataPacket;
 		packet->unixTimestamp = _getUnixTime(timestamp);
 		packet->fuelRemaining = atof(current_fuel.c_str());
-		
+
 		// Create telemetry packet 
 		DataPacket packet;
 
 		packet.unixTimestamp = _getUnixTime(timestamp);
-        packet.fuelRemaining = atof(current_fuel.c_str());
+		packet.fuelRemaining = atof(current_fuel.c_str());
 
 		//Send telemetry packet to server
-        if (!client.SendDataPacket(packet))
-        {
-            std::cout << "Failed to send data packet\n";
-            break;
-        }
+		if (!client.SendDataPacket(packet))
+		{
+			std::cout << "Failed to send data packet\n";
+			break;
+		}
+		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
 	_file.close();
