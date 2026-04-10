@@ -10,23 +10,121 @@
 #include <thread>
 #include <vector>
 
+#include "Packets.h"
+
 
 #pragma comment(lib, "ws2_32.lib")
 
+#define LOGFOLDER "Logs/"
+
+#define TIMESTAMP_SIZE sizeof(int)
+#define FUEL_SIZE sizeof(float)
+#define AIRCRAFT_ID_SIZE sizeof(int)
+
 using namespace std;
+
+//fuel per second
+float calculateFuelConsumption(int deltaTime, float deltaFuel) {
+    return deltaFuel / deltaTime;
+}
+
+float calculateAverageFuelConsumption(int packets_received, float average_fuel_consumption, float fuel_consumption) {
+    if (packets_received == 0) {
+        return fuel_consumption;
+    }
+
+    return ((average_fuel_consumption * packets_received) + fuel_consumption) / (packets_received + 1);
+}
 
 void handleClient(SOCKET clientSock) {
     char buffer[1024];
     int bytes;
 
+    ofstream file;
+
+    int _aircraftID = -1;
+    float _fuel_consumption = 0;
+    float _current_fuel = 0;
+    float _average_fuel_consumption = 0;
+    int _current_time = 0;
+    int _packets_received = 0;
+
     while ((bytes = recv(clientSock, buffer, sizeof(buffer), 0)) > 0) {
-        std::string msg(buffer, bytes);
-        std::cout << "Received: " << msg << std::endl;
+        cout << "Bytes received: " << bytes << endl;
+        
+
+        switch (bytes) {
+
+        //handle aircraft id packet
+        case AIRCRAFT_ID_SIZE:
+            
+            memcpy(&_aircraftID, buffer, AIRCRAFT_ID_SIZE);
+            for (int i = 0; i < 5; i++) {
+                cout << "Aircraft (" << _aircraftID << ") connected.\n";
+                if (file) {
+                    file.close();
+                }
+
+                //attempt to make a new file
+                file.open(LOGFOLDER + to_string(_aircraftID) + ".txt");
+
+                //check if file opened, try again if not.
+                if (file) {
+                    break;
+                }
+
+                cerr << "File failed to open for aircraft: " << _aircraftID;
+            }
+
+            //if file failed to open, close the connection
+            if (!file) {
+                closesocket(clientSock);
+                file.close();
+                cout << "Failed to open file for aircraft (" << _aircraftID << ")\n";
+                return;
+            }
+
+            break;
+
+        //handle regular telemetry packet
+        case TIMESTAMP_SIZE + FUEL_SIZE:
+            int timestamp = 0;
+            float fuel_amount = 0;
+
+            //parse
+            memcpy(&timestamp, buffer, TIMESTAMP_SIZE);
+            memcpy(&fuel_amount, buffer + TIMESTAMP_SIZE, FUEL_SIZE);
+
+            cout << "Aircraft (" << _aircraftID << ") Fuel: " << fuel_amount;
+            cout << "Aircraft (" << _aircraftID << ") timestamp: " << timestamp << "\n";
+
+
+            //calculate current fuel consumption
+            _fuel_consumption = calculateFuelConsumption(timestamp - _current_time, fuel_amount - _current_fuel);
+            
+            //calculate average fuel consumption
+            _average_fuel_consumption = calculateAverageFuelConsumption(_packets_received, _average_fuel_consumption, _fuel_consumption);
+
+            //set current values
+            _current_time = timestamp;
+            _current_fuel = fuel_amount;
+            _packets_received++;
+
+            //store fuel amount
+            file << _fuel_consumption << endl;
+
+            break;
+
+
+        }
+
 
     }
 
-    std::cout << "Client disconnected\n";
+    //store average fuel consumption when transmission ends
+    file << "average fuel consumption: " << _average_fuel_consumption << endl;
     closesocket(clientSock);
+    std::cout << "Client disconnected\n";
 }
 
 int main() {
