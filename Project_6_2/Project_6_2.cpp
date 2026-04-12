@@ -29,6 +29,7 @@ int main(int argc, char* argv[]) {
 	//get args
 	string Server_IP = argv[1];
 	string Port = argv[2];
+	int ID = atoi(argv[3]);
 
 	ClientNetwork client;
 
@@ -42,7 +43,7 @@ int main(int argc, char* argv[]) {
 
 	//Aircraft ID 
 	IDPacket idPacket;
-	idPacket.aircraftID = 1000000 + rand() % 900000;
+	idPacket.aircraftID = ID;
 
 	//Send ID packet
 	if (!client.SendIDPacket(idPacket)) {
