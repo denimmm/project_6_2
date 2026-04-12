@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <ws2tcpip.h>
+
 #include "TelemetryModule.h"
 #include "ClientNetwork.h"
 

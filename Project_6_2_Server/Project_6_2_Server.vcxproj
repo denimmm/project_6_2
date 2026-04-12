@@ -105,6 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\PEKORA\Documents\school\Project_6\Project_6_2\Project_6_2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -131,7 +132,12 @@
     <ClCompile Include="Project_6_2_Server.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Packets.h" />
+    <ClInclude Include="..\Project_6_2\Packets.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Project_6_2\Project_6_2.vcxproj">
+      <Project>{39ca50bf-ead3-4f20-ac54-1ca43a5c2b24}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
