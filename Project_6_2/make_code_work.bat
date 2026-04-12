@@ -1,0 +1,1 @@
+g++ Project_6_2.cpp TelemetryModule.cpp -std=c++17 -o program.exe -lws2_32 -pthread
