@@ -75,9 +75,6 @@ void handleClient(SOCKET clientSock) {
 	cout << "Aircraft (" << _aircraftID << ") connected.\n";
 
 	for (int i = 0; i < 5; i++) {
-		
-		//make logs folder
-		filesystem::create_directories(LOGFOLDER);
 
 		//attempt to make a new file
 		file.open(LOGFOLDER + to_string(_aircraftID) + ".txt");
@@ -112,11 +109,11 @@ void handleClient(SOCKET clientSock) {
 		memcpy(&timestamp, buffer, TIMESTAMP_SIZE);
 		memcpy(&fuel_amount, buffer + TIMESTAMP_SIZE, FUEL_SIZE);
 
-		cout << "Aircraft (" << _aircraftID << ") Fuel: " << fuel_amount;
-		cout << "Aircraft (" << _aircraftID << ") timestamp: " << timestamp << "\n";
+		//		cout << "Aircraft (" << _aircraftID << ") Fuel: " << fuel_amount;
+		//		cout << "Aircraft (" << _aircraftID << ") timestamp: " << timestamp << "\n";
 
 
-		//calculate current fuel consumption
+				//calculate current fuel consumption
 		_fuel_consumption = calculateFuelConsumption(timestamp - _current_time, fuel_amount - _current_fuel);
 
 		//calculate average fuel consumption
@@ -135,11 +132,15 @@ void handleClient(SOCKET clientSock) {
 
 	//store average fuel consumption when transmission ends
 	file << "average fuel consumption: " << _average_fuel_consumption << endl;
+	file.close();
 	closesocket(clientSock);
 	std::cout << "Client disconnected\n";
 }
 
 int main() {
+
+	filesystem::create_directories(LOGFOLDER);
+
 	WSADATA wsa;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
 		std::cerr << "WSAStartup failed\n";
@@ -175,8 +176,6 @@ int main() {
 
 	std::cout << "Server listening on port 8080...\n";
 
-	std::vector<std::thread> threads;
-
 	while (true) {
 		SOCKET clientSock = ::accept(serverSock, nullptr, nullptr); // global namespace
 		if (clientSock == INVALID_SOCKET) {
@@ -186,9 +185,7 @@ int main() {
 
 		std::cout << "Client connected!\n";
 
-		//spawn a new thread to handle this client
-		threads.emplace_back(handleClient, clientSock);
-		threads.back().detach(); //detach so thread cleans up automatically
+		std::thread(handleClient, clientSock).detach();
 	}
 
 	closesocket(serverSock);
