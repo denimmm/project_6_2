@@ -121,7 +121,7 @@ public:
 		std::cout << "Server listening on port 8080...\n";
 
 		//spawn worker threads
-		for (int i = 0; i < threads -2; i++) { //subtract 2: 1 for main (accepts new connections) and 1 for HandleReceive thread.
+		for (int i = 0; i < threads -2; i++) { 
 			ThreadPool.emplace_back(&Server::HandleTasks, this);
 		}
 
@@ -130,7 +130,7 @@ public:
 
 		//loop forever. only accepts connections and recvs 1 packet to get the aircraft id
 		while (running) {
-			SOCKET clientSock = ::accept(serverSock, nullptr, nullptr); // global namespace
+			SOCKET clientSock = ::accept(serverSock, nullptr, nullptr);
 			if (clientSock == INVALID_SOCKET) {
 				std::cerr << "Accept failed\n";
 				continue;
@@ -150,7 +150,6 @@ public:
 			}
 			unique_lock<shared_mutex> lock(ClientMapMutex);
 			ClientMap[aircraftID] = new Client(clientSock, aircraftID);
-			//std::thread(handleClient, clientSock).detach();
 		}
 	}
 
@@ -270,7 +269,6 @@ private:
 
 
 			//open file
-			//file.open("Logs/" + to_string(current_client->ID) + ".txt", ios::app);
 
 			if (!current_client->file.is_open()) {
 				current_client->ClientMutex.unlock();
@@ -350,7 +348,6 @@ private:
 			fds.reserve(ClientMap.size());
 			idMap.reserve(ClientMap.size());
 
-			// 1. Build poll list (snapshot of current clients)
 			for (auto& [id, client] : ClientMap)
 			{
 				WSAPOLLFD fd{};
@@ -367,26 +364,22 @@ private:
 				continue;
 			}
 
-			// 2. Wait for events
 			int ret = WSAPoll(fds.data(), (ULONG)fds.size(), -1);
 
 			if (ret <= 0)
 				continue;
 
-			// 3. Process events
 			for (size_t i = 0; i < fds.size(); i++)
 			{
 				short re = fds[i].revents;
 				int clientId = idMap[i];
 
-				// 3A. Handle socket errors / disconnect signals
 				if (re & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					OnClientDisconnect(clientId);
 					continue;
 				}
 
-				// 3B. Handle readable socket
 				if (re & POLLRDNORM)
 				{
 					char buffer[TIMESTAMP_SIZE + FUEL_SIZE];
@@ -414,94 +407,12 @@ private:
 	}
 };
 
-//void handleClient(SOCKET clientSock) {
-//	char buffer[1024];
-//	int bytes;
-//
-//	ofstream file;
-//
-//	int _aircraftID = -1;
-//	float _fuel_consumption = 0;
-//	float _current_fuel = 0;
-//	float _average_fuel_consumption = 0;
-//	int _current_time = 0;
-//	int _packets_received = 0;
-//
-//	int tries = 0;
-//
-//	for (int i = 0; i < 5; i++) {
-//
-//		//attempt to make a new file
-//		file.open(LOGFOLDER + to_string(_aircraftID) + ".txt");
-//
-//		//check if file opened, try again if not.
-//		if (file) {
-//			break;
-//		}
-//
-//		cerr << "File failed to open file for aircraft: " << _aircraftID << endl;
-//	}
-//
-//	//if file failed to open, close the connection
-//	if (!file) {
-//		closesocket(clientSock);
-//		file.close();
-//		cout << "Failed to open file for aircraft (" << _aircraftID << ")\n";
-//		return;
-//	}
-//
-//	//handle telemetry
-//	while (bool success = recvAll(clientSock, buffer, FUEL_SIZE + TIMESTAMP_SIZE)) {
-//
-//		if (!success) {
-//			break;
-//		}
-//
-//		int timestamp = 0;
-//		float fuel_amount = 0;
-//
-//		//parse
-//		memcpy(&timestamp, buffer, TIMESTAMP_SIZE);
-//		memcpy(&fuel_amount, buffer + TIMESTAMP_SIZE, FUEL_SIZE);
-//
-//		//		cout << "Aircraft (" << _aircraftID << ") Fuel: " << fuel_amount;
-//		//		cout << "Aircraft (" << _aircraftID << ") timestamp: " << timestamp << "\n";
-//
-//
-//				//calculate current fuel consumption
-//		_fuel_consumption = calculateFuelConsumption(timestamp - _current_time, fuel_amount - _current_fuel);
-//
-//		//calculate average fuel consumption
-//		_average_fuel_consumption = calculateAverageFuelConsumption(_packets_received, _average_fuel_consumption, _fuel_consumption);
-//
-//		//set current values
-//		_current_time = timestamp;
-//		_current_fuel = fuel_amount;
-//		_packets_received++;
-//
-//		//store fuel amount
-//		file << _fuel_consumption << endl;
-//
-//
-//	}
-//
-//	//store average fuel consumption when transmission ends
-//	file << "average fuel consumption: " << _average_fuel_consumption << endl;
-//	file.close();
-//	closesocket(clientSock);
-//	std::cout << "Client disconnected\n";
-//}
-
-
-
 int main() {
-
 
 	Server server(8080, 12);
 
 	server.Initialize();
-	
-	//server deconstructed when out of scope
+
 }
 
 

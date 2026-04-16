@@ -3,5 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>127.0.0.1 8080 00001</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArgumentsHistory>127.0.0.1 8080 00001|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
 </Project>
