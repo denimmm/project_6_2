@@ -1,5 +1,8 @@
-// Project_6_2.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+/**
+ * @file Project_6_2.cpp
+ * @brief Acts as the Entry point to the client application
+ * @author Jax Drummond
+ */
 
 #include <iostream>
 #include <winsock2.h>
@@ -17,7 +20,12 @@ using namespace std;
 
 const int NUMBER_OF_ARGS = 4;
 
-
+/**
+ * @brief Entry point of the client application. Connects to the server, sends the aircraft ID, and starts the telemetry module.
+ * @param argc The number of command line arguments. Should be 4 (program name, IP address, port, aircraft ID).
+ * @param argv The command line arguments. argv[1] should be the server IP address, argv[2] should be the port number, and argv[3] should be the aircraft ID.
+ * @return Returns 0 on successful shutdown, -1 on error.
+ */
 int main(int argc, char* argv[]) {
 
 	//check arg count
@@ -54,17 +62,9 @@ int main(int argc, char* argv[]) {
 
 	TelemetryModule telem; // Constructor initializes
 
-	//try to connect 5 times
-
-	//if (connect(sock, (sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
-	//    std::cout << "Connection failed\n";
-	//    return 1;
-	//}
-
 	cout << "starting telemetry\n";
 
 	telem.Run(client); // Run the telemetry manager
-
 
 	client.Close();
 
