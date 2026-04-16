@@ -1,7 +1,11 @@
+/**
+ * @file main.cpp
+ * @brief Defines the Server Class and starts program
+ * @author Denim MacDougall
+ */
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
-
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -12,13 +16,13 @@
 #include <queue>
 #include <mutex>
 #include <shared_mutex>
+
 #include "Packets.h"
 
 
 #pragma comment(lib, "ws2_32.lib")
 
 #define LOGFOLDER "Logs/"
-
 #define TIMESTAMP_SIZE sizeof(int)
 #define FUEL_SIZE sizeof(float)
 #define AIRCRAFT_ID_SIZE sizeof(int)
@@ -27,7 +31,10 @@
 
 
 using namespace std;
-
+/**
+ * @struct Client
+ * @brief Stores data for each client including socket and mutex
+ */
 typedef struct Client {
 	SOCKET clientsock;
 	float current_fuel;
@@ -47,43 +54,66 @@ typedef struct Client {
 		current_fuel_consumption = 0;
 		average_fuel_consumption = 0;
 		timestamp = 0;
-		file.open("Logs/" + to_string(ID) + ".txt", ios::app);
+		file.open(LOGFOLDER + to_string(ID) + ".txt", ios::app);
 	}
 
 };
 
+/**
+ * @struct Task
+ * @brief Stores data and aircraft ID of one task which must be processed by worker threads
+ */
 typedef struct Task {
 	int aircraftID;
 	char data[TIMESTAMP_SIZE + FUEL_SIZE];
 	
+	//constructor
 	Task(int id, char* buffer) {
 		aircraftID = id;
 		memcpy(this->data, buffer, TIMESTAMP_SIZE + FUEL_SIZE);
 	}
 };
 
+/**
+ * @class Server
+ * @brief Defines the server class. Performs all operations of the server.
+ */
 class Server {
 public:
-	SOCKET serverSock;
-	bool running;
-	vector<thread> ThreadPool;
-	unordered_map<int, Client*> ClientMap;
-	shared_mutex ClientMapMutex;
-	queue<Task> TaskQueue;
-	mutex QueueMutex;
-	condition_variable TaskCV;
-	int port;
-	int threads;
+	SOCKET serverSock;//server socket
+	vector<thread> ThreadPool;//holds all active threads except main
+	unordered_map<int, Client*> ClientMap;//holds all client structs
+	shared_mutex ClientMapMutex;//shared mutex for ClientMap
+	queue<Task> TaskQueue;//holds all active tasks.
+	mutex QueueMutex;//mutex for TaskQueue
+	condition_variable TaskCV;//condition variable for all threads. wakes up threads when new task is pushed to queue
 
+	bool running;//server shuts down when false
+	int port; //server port
+	int threads; //total number of threads to start
 
+	/**
+	 * @brief Server object constructor
+	 *
+	 * @param a port of the server
+	 * @param b number of threads to start
+	 * @return Server object
+	 */
 	Server(int port, int threads) {
 		this->port = port;
 		this->threads = threads;
 	}
 
+	/**
+	 * @brief Starts the server
+	 *
+	 * @return loops until server shutsdown or fails. returns 1 for failure to start
+	 */
 	int Initialize() {
+		//create directory for logs if it doesnt already exist:
 		filesystem::create_directories(LOGFOLDER);
 
+		//start setting up WSA
 		WSADATA wsa;
 		if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
 			std::cerr << "WSAStartup failed\n";
@@ -102,6 +132,7 @@ public:
 		server.sin_port = htons(port);
 		server.sin_addr.s_addr = INADDR_ANY;
 
+		//bind server socket
 		if (bind(serverSock, (sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
 			std::cerr << "Bind failed\n";
 			closesocket(serverSock);
@@ -109,7 +140,7 @@ public:
 			return 1;
 		}
 
-
+		//listen on server socket
 		if (listen(serverSock, SOMAXCONN) == SOCKET_ERROR) {
 			std::cerr << "Listen failed\n";
 			closesocket(serverSock);
@@ -141,27 +172,33 @@ public:
 			//get the client's ID
 			int aircraftID = GetClientID(clientSock);
 
-			//check if aircraft id is invalid or already exists.
+			//check if aircraft id is invalid or already exists. close connection.
 			if (aircraftID < 0 || ClientMap.find(aircraftID) != ClientMap.end()) {
 				cout << "invalid aircraft ID : " << aircraftID << "disconnecting.\n";
 				//close the socket and continue
 				closesocket(clientSock);
 				continue;
 			}
+
+			//add client to client map
 			unique_lock<shared_mutex> lock(ClientMapMutex);
 			ClientMap[aircraftID] = new Client(clientSock, aircraftID);
 		}
+		return 0;
 	}
 
-	//deconstruct server
+	/**
+	 * @brief Server object deconstructor. cleans WSA, closes sockets, and deletes clients
+	 */
 	~Server() {
+
+		running = false;
 		//close all sockets and delete all clients
 		for (auto& [id, client] : ClientMap) {
 			if (client) {
 				closesocket(client->clientsock);
 				delete client;
 			}
-
 		}
 
 		//join all threads
@@ -169,12 +206,20 @@ public:
 			t.join();
 		}
 
-
 		//clean up server
 		closesocket(serverSock);
 		WSACleanup();
 	}
 private:
+
+	/**
+	 * @brief Receives from a socket until a specific number of bytes are received.
+	 *
+	 * @param a client socket
+	 * @param b buffer to write to
+	 * @param c number of bytes to receive
+	 * @return true or false based on whether receive was successful
+	 */
 	bool recvAll(SOCKET sock, char* buffer, int totalBytes)
 	{
 		int bytesReceived = 0;
@@ -200,11 +245,25 @@ private:
 		return true;
 	}
 
-	//fuel per second
+	/**
+	 * @brief Calculates current fuel consumption since last packet
+	 *
+	 * @param a seconds since last packet
+	 * @param b difference in fuel since last packet
+	 * @return average fuel consumption float
+	 */
 	float calculateFuelConsumption(int deltaTime, float deltaFuel) {
 		return -deltaFuel / deltaTime;
 	}
 
+	/**
+	 * @brief Calculates the running average fuel consumption
+	 *
+	 * @param a total packets received
+	 * @param b current running average of fuel consumption
+	 * @param c current fuel consumption
+	 * @return average fuel consumption float
+	 */
 	float calculateAverageFuelConsumption(int packets_received, float average_fuel_consumption, float fuel_consumption) {
 		if (packets_received == 0) {
 			return fuel_consumption;
@@ -213,6 +272,12 @@ private:
 		return ((average_fuel_consumption * packets_received) + fuel_consumption) / (packets_received + 1);
 	}
 
+	/**
+	 * @brief accepts the first packet sent by a client to return the client ID
+	 *
+	 * @param a client socket
+	 * @return client ID int
+	 */
 	int GetClientID(SOCKET clientSock) {
 
 		char buffer[AIRCRAFT_ID_SIZE] = { 0 };
@@ -229,10 +294,11 @@ private:
 		return aircraftID;
 	}
 
-	//
+	/**
+	 * @brief processes all tasks in TaskQueue. Run as threads.
+	 */
 	void HandleTasks() {
-		//reusable file pointer
-		fstream file;
+
 		while (running) {
 
 			unique_lock<mutex> Qlock(QueueMutex);
@@ -268,13 +334,12 @@ private:
 			current_client->ClientMutex.lock();
 
 
-			//open file
-
+			//check if file is open
 			if (!current_client->file.is_open()) {
 				current_client->ClientMutex.unlock();
 				cout << "ERROR: FILE FAILED TO OPEN: " << current_client->ID << '\n';
 
-				current_client->file.open("Logs/" + to_string(current_client->ID) + ".txt", ios::app);
+				current_client->file.open(LOGFOLDER + to_string(current_client->ID) + ".txt", ios::app);
 				//put the task back to try again later
 				QueueMutex.lock();
 				TaskQueue.push(current_task);
@@ -311,6 +376,12 @@ private:
 
 	}
 
+	/**
+	 * @brief Cleans up data tied to client when the client disconnects. Blocks all worker threads
+	 *
+	 * @param a Client ID
+	 * @return void
+	 */
 	void OnClientDisconnect(int clientID) {
 		unique_lock<shared_mutex> lock(ClientMapMutex);
 		auto it = ClientMap.find(clientID);
@@ -322,8 +393,6 @@ private:
 
 		//save average fuel consumption
 		current_client->ClientMutex.lock();
-		
-		//current_client->file.open("Logs/" + to_string(current_client->ID) + ".txt", ios::app);
 		current_client->file << "Average Fuel Consumption: " + to_string(current_client->average_fuel_consumption);
 		current_client->file.close();
 
@@ -339,15 +408,22 @@ private:
 		cout << "Client disconnected.\n";
 	}
 
+	/**
+	 * @brief handles receiving every packet for the server using WSAPoll(). Run as a thread.
+
+	 * @return void
+	 */
 	void HandleReceive() {
 		while (running)
 		{
+			//makes two new vectors every loop. Can be optimized in the future
 			std::vector<WSAPOLLFD> fds;
 			std::vector<int> idMap; // maps fds[i] -> client ID
 
 			fds.reserve(ClientMap.size());
 			idMap.reserve(ClientMap.size());
 
+			//populate maps
 			for (auto& [id, client] : ClientMap)
 			{
 				WSAPOLLFD fd{};
@@ -358,9 +434,10 @@ private:
 				idMap.push_back(id);
 			}
 
+			//no clients trying to join
 			if (fds.empty())
 			{
-				Sleep(1);
+				Sleep(50);//stop thread from spinning, give time for more sockets to be ready
 				continue;
 			}
 
@@ -395,11 +472,11 @@ private:
 
 					//construct the task
 					Task current_task(clientId, buffer);
-
+					//push the task
 					QueueMutex.lock();
 					TaskQueue.push(current_task);
 					QueueMutex.unlock();
-					TaskCV.notify_one();
+					TaskCV.notify_one(); //tells 1 thread to wakeup
 
 				}
 			}
@@ -407,12 +484,19 @@ private:
 	}
 };
 
+
+/**
+ * @brief main thread
+ *
+ * @return exit code int. 0 for normal exit, any other number means there was an error
+ */
 int main() {
 
 	Server server(8080, 12);
 
 	server.Initialize();
 
+	return 0;
 }
 
 
